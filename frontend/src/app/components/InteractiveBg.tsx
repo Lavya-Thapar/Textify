@@ -44,7 +44,7 @@ const RandomParticle = ({
   particleRef,
 }: {
   style: React.CSSProperties;
-  particleRef: any;
+  particleRef: React.LegacyRef<HTMLDivElement>;
 }) => {
   return (
     <div
@@ -147,7 +147,9 @@ const InteractiveBg = () => {
         <RandomParticle
           style={style}
           key={idx}
-          particleRef={(el: any) => (particlesRef.current[idx] = el)}
+          particleRef={(el: HTMLDivElement) => {
+            particlesRef.current[idx] = el;
+          }}
         />
       ))}
     </div>
