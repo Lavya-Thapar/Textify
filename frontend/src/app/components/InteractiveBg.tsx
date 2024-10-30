@@ -83,8 +83,33 @@ const InteractiveBg = () => {
         particle.style.transform = `translate(${moveX}px, ${moveY}px)`;
       });
     }, THROTTLE_AMOUNT);
+    const updateOrientation = throttle((ev: DeviceOrientationEvent) => {
+      if (!ev.beta || !ev.gamma) return;
+      const x = (ev.gamma / 360) * width;
+      const y = (ev.beta / 360) & height;
+      // TODO: Does it work?
+      console.log(x, y);
+
+      // determine how far points go
+      const absoluteDistanceX = x - width / 2;
+      const absoluteDistanceY = y - height / 2;
+
+      const scaledDistanceX = absoluteDistanceX / PARALLAX_SCALE;
+      const scaledDistanceY = absoluteDistanceY / PARALLAX_SCALE;
+
+      // greater the zIndex, more the movement
+      particlesProperties.forEach(({ zIndex }, idx) => {
+        const particle = particlesRef.current[idx];
+        if (!particle) return;
+        const moveX = scaledDistanceX * zIndex;
+        const moveY = scaledDistanceY * zIndex;
+        particle.style.transform = `translate(${moveX}px, ${moveY}px)`;
+      });
+    }, THROTTLE_AMOUNT);
     window.addEventListener("mousemove", updateMousePosition);
+    window.addEventListener("deviceorientation", updateOrientation, true);
     return () => {
+      window.removeEventListener("deviceorientation", updateOrientation, true);
       window.removeEventListener("mousemove", updateMousePosition);
     };
   }, []);
