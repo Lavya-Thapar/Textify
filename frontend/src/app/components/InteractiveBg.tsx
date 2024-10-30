@@ -80,15 +80,15 @@ const InteractiveBg = () => {
         if (!particle) return;
         const moveX = scaledDistanceX * zIndex;
         const moveY = scaledDistanceY * zIndex;
-        particle.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        particle.style.transform = `translate(${moveX.toFixed(
+          3
+        )}px, ${moveY.toFixed(3)}px)`;
       });
     }, THROTTLE_AMOUNT);
     const updateOrientation = throttle((ev: DeviceOrientationEvent) => {
       if (!ev.beta || !ev.gamma) return;
       const x = (ev.gamma / 360) * width;
-      const y = (ev.beta / 360) & height;
-      // TODO: Does it work?
-      console.log(x, y);
+      const y = (ev.beta / 360) * height;
 
       // determine how far points go
       const absoluteDistanceX = x - width / 2;
@@ -103,16 +103,18 @@ const InteractiveBg = () => {
         if (!particle) return;
         const moveX = scaledDistanceX * zIndex;
         const moveY = scaledDistanceY * zIndex;
-        particle.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        particle.style.transform = `translate(${moveX.toFixed(
+          3
+        )}px, ${moveY.toFixed(3)}px)`;
       });
     }, THROTTLE_AMOUNT);
     window.addEventListener("mousemove", updateMousePosition);
-    window.addEventListener("deviceorientation", updateOrientation, true);
+    window.addEventListener("deviceorientation", updateOrientation);
     return () => {
-      window.removeEventListener("deviceorientation", updateOrientation, true);
+      window.removeEventListener("deviceorientation", updateOrientation);
       window.removeEventListener("mousemove", updateMousePosition);
     };
-  }, []);
+  }, [width, height]);
 
   useEffect(() => {
     setWidth(window.innerWidth);
