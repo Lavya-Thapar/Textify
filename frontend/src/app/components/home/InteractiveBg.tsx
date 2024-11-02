@@ -124,26 +124,26 @@ const InteractiveBg = () => {
         )}px, ${moveY.toFixed(3)}px)`;
       });
     }, THROTTLE_AMOUNT);
+
+    // after user has scrolled, remove these listeners for performance benefits
+    const removeListenersByScroll = throttle(() => {
+      const scroll = window.scrollY;
+      if (scroll > height) {
+        window.removeEventListener("deviceorientation", updateOrientation);
+        window.removeEventListener("mousemove", updateMousePosition);
+      }
+    }, THROTTLE_AMOUNT);
+
     window.addEventListener("mousemove", updateMousePosition);
     window.addEventListener("deviceorientation", updateOrientation);
+    window.addEventListener("scroll", removeListenersByScroll);
 
     return () => {
       window.removeEventListener("deviceorientation", updateOrientation);
       window.removeEventListener("mousemove", updateMousePosition);
+      window.removeEventListener("scroll", removeListenersByScroll);
     };
   }, [width, height, particlesProperties]);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const ref = containerRef.current;
-    const updateScroll = throttle(() => {
-      const y = window.scrollY;
-
-      ref.style.transform = `translateY(-${y}px)`;
-    }, THROTTLE_AMOUNT);
-    window.addEventListener("scroll", updateScroll);
-    return () => window.removeEventListener("scroll", updateScroll);
-  }, []);
 
   useEffect(() => {
     setWidth(window.innerWidth);
@@ -155,7 +155,7 @@ const InteractiveBg = () => {
     <div
       ref={containerRef}
       className={cn(
-        "absolute inset-0 transition-opacity duration-1000 before:absolute before:inset-x-0 before:h-[125vh] before:bg-gradient-to-b before:from-transparent before:via-white/20 before:to-white before:-z-10 pointer-events-none",
+        "absolute inset-0 transition-opacity overflow-hidden duration-1000 pointer-events-none",
         !loading ? "opacity-0" : "opacity-100"
       )}
       aria-hidden="true"
