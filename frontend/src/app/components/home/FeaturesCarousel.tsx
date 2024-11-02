@@ -69,7 +69,11 @@ const FeaturesCarousel = () => {
                 className="px-5 py-4 rounded-lg bg-slate-800 text-slate-200 cursor-pointer"
                 aria-roledescription="button"
                 onClick={() => {
-                  selected == idx ? setSelected(-1) : setSelected(idx);
+                  if (selected === idx) {
+                    setSelected(-1);
+                  } else {
+                    setSelected(idx);
+                  }
                 }}
               >
                 <h2 className="block text-xl">{heading}</h2>
