@@ -48,7 +48,7 @@ const RandomParticle = ({
 }) => {
   return (
     <div
-      className="absolute rounded-full bg-black transition-transform duration-75"
+      className="absolute rounded-full bg-black transition-transform duration-75 -z-50"
       style={style}
       ref={particleRef}
     />
@@ -61,6 +61,22 @@ const InteractiveBg = () => {
   const [loading, setLoading] = useState<boolean>(false);
 
   const particlesRef = useRef<Array<HTMLDivElement | null>>([]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // We don't want random values to get re-created at each re-render due to change in state
+  const particlesProperties = useMemo(
+    () =>
+      Array(PARTICLE_COUNT)
+        .fill(0)
+        .map((_, idx) =>
+          getParticleProperties({
+            screenWidth: width,
+            screenHeight: height,
+            idx,
+          })
+        ),
+    [width, height]
+  );
 
   useEffect(() => {
     const updateMousePosition = throttle((ev: MouseEvent) => {
@@ -110,11 +126,24 @@ const InteractiveBg = () => {
     }, THROTTLE_AMOUNT);
     window.addEventListener("mousemove", updateMousePosition);
     window.addEventListener("deviceorientation", updateOrientation);
+
     return () => {
       window.removeEventListener("deviceorientation", updateOrientation);
       window.removeEventListener("mousemove", updateMousePosition);
     };
-  }, [width, height]);
+  }, [width, height, particlesProperties]);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ref = containerRef.current;
+    const updateScroll = throttle(() => {
+      const y = window.scrollY;
+
+      ref.style.transform = `translateY(-${y}px)`;
+    }, THROTTLE_AMOUNT);
+    window.addEventListener("scroll", updateScroll);
+    return () => window.removeEventListener("scroll", updateScroll);
+  }, []);
 
   useEffect(() => {
     setWidth(window.innerWidth);
@@ -122,25 +151,11 @@ const InteractiveBg = () => {
     setLoading(true);
   }, []);
 
-  // We don't want random values to get re-created at each re-render due to change in state
-  const particlesProperties = useMemo(
-    () =>
-      Array(PARTICLE_COUNT)
-        .fill(0)
-        .map((_, idx) =>
-          getParticleProperties({
-            screenWidth: width,
-            screenHeight: height,
-            idx,
-          })
-        ),
-    [width, height]
-  );
-
   return (
     <div
+      ref={containerRef}
       className={cn(
-        "absolute inset-0 overflow-hidden transition-opacity duration-1000",
+        "absolute inset-0 transition-opacity duration-1000 before:absolute before:inset-x-0 before:h-[125vh] before:bg-gradient-to-b before:from-transparent before:via-white/20 before:to-white before:-z-10 pointer-events-none",
         !loading ? "opacity-0" : "opacity-100"
       )}
       aria-hidden="true"
