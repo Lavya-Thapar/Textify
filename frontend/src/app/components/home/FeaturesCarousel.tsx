@@ -166,7 +166,7 @@ const FeaturesCarousel = () => {
                 <div
                   aria-hidden="true"
                   className={cn(
-                    "absolute top-0 left-0 right-0 h-1 bg-blue-400",
+                    "hidden sm:block absolute top-0 left-0 right-0 h-1 bg-blue-400",
                     { hidden: selected !== idx }
                   )}
                   style={{
