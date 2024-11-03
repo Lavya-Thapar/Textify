@@ -5,7 +5,7 @@ import Hero from "./components/home/Hero";
 export default function Home() {
   return (
     <div>
-      <div className="md:h-screen flex flex-col items-center mt-20 md:mt-0 md:justify-center">
+      <div className="h-screen flex flex-col items-center justify-center">
         <InteractiveBg />
         <Hero
           name="Textify"
