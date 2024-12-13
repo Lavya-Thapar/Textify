@@ -44,11 +44,11 @@ const RandomParticle = ({
   particleRef,
 }: {
   style: React.CSSProperties;
-  particleRef: any;
+  particleRef: React.LegacyRef<HTMLDivElement>;
 }) => {
   return (
     <div
-      className="absolute rounded-full bg-black transition-transform duration-75"
+      className="absolute rounded-full bg-black transition-transform duration-75 -z-50"
       style={style}
       ref={particleRef}
     />
@@ -61,6 +61,22 @@ const InteractiveBg = () => {
   const [loading, setLoading] = useState<boolean>(false);
 
   const particlesRef = useRef<Array<HTMLDivElement | null>>([]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+  // We don't want random values to get re-created at each re-render due to change in state
+  const particlesProperties = useMemo(
+    () =>
+      Array(PARTICLE_COUNT)
+        .fill(0)
+        .map((_, idx) =>
+          getParticleProperties({
+            screenWidth: width,
+            screenHeight: height,
+            idx,
+          })
+        ),
+    [width, height]
+  );
 
   useEffect(() => {
     const updateMousePosition = throttle((ev: MouseEvent) => {
@@ -80,15 +96,15 @@ const InteractiveBg = () => {
         if (!particle) return;
         const moveX = scaledDistanceX * zIndex;
         const moveY = scaledDistanceY * zIndex;
-        particle.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        particle.style.transform = `translate(${moveX.toFixed(
+          3
+        )}px, ${moveY.toFixed(3)}px)`;
       });
     }, THROTTLE_AMOUNT);
     const updateOrientation = throttle((ev: DeviceOrientationEvent) => {
       if (!ev.beta || !ev.gamma) return;
       const x = (ev.gamma / 360) * width;
-      const y = (ev.beta / 360) & height;
-      // TODO: Does it work?
-      console.log(x, y);
+      const y = (ev.beta / 360) * height;
 
       // determine how far points go
       const absoluteDistanceX = x - width / 2;
@@ -103,16 +119,31 @@ const InteractiveBg = () => {
         if (!particle) return;
         const moveX = scaledDistanceX * zIndex;
         const moveY = scaledDistanceY * zIndex;
-        particle.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        particle.style.transform = `translate(${moveX.toFixed(
+          3
+        )}px, ${moveY.toFixed(3)}px)`;
       });
     }, THROTTLE_AMOUNT);
+
+    // after user has scrolled, remove these listeners for performance benefits
+    const removeListenersByScroll = throttle(() => {
+      const scroll = window.scrollY;
+      if (scroll > height) {
+        window.removeEventListener("deviceorientation", updateOrientation);
+        window.removeEventListener("mousemove", updateMousePosition);
+      }
+    }, THROTTLE_AMOUNT);
+
     window.addEventListener("mousemove", updateMousePosition);
-    window.addEventListener("deviceorientation", updateOrientation, true);
+    window.addEventListener("deviceorientation", updateOrientation);
+    window.addEventListener("scroll", removeListenersByScroll);
+
     return () => {
-      window.removeEventListener("deviceorientation", updateOrientation, true);
+      window.removeEventListener("deviceorientation", updateOrientation);
       window.removeEventListener("mousemove", updateMousePosition);
+      window.removeEventListener("scroll", removeListenersByScroll);
     };
-  }, []);
+  }, [width, height, particlesProperties]);
 
   useEffect(() => {
     setWidth(window.innerWidth);
@@ -120,25 +151,11 @@ const InteractiveBg = () => {
     setLoading(true);
   }, []);
 
-  // We don't want random values to get re-created at each re-render due to change in state
-  const particlesProperties = useMemo(
-    () =>
-      Array(PARTICLE_COUNT)
-        .fill(0)
-        .map((_, idx) =>
-          getParticleProperties({
-            screenWidth: width,
-            screenHeight: height,
-            idx,
-          })
-        ),
-    [width, height]
-  );
-
   return (
     <div
+      ref={containerRef}
       className={cn(
-        "absolute inset-0 overflow-hidden transition-opacity duration-1000",
+        "absolute inset-0 transition-opacity overflow-hidden duration-1000 pointer-events-none",
         !loading ? "opacity-0" : "opacity-100"
       )}
       aria-hidden="true"
@@ -147,7 +164,9 @@ const InteractiveBg = () => {
         <RandomParticle
           style={style}
           key={idx}
-          particleRef={(el: any) => (particlesRef.current[idx] = el)}
+          particleRef={(el: HTMLDivElement) => {
+            particlesRef.current[idx] = el;
+          }}
         />
       ))}
     </div>
